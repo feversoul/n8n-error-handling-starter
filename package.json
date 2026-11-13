@@ -1,0 +1,14 @@
+{
+  "name": "n8n-error-handling-starter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A small n8n example to import, run and break: retries, error output, upsert, and one Error Trigger workflow that logs, throttles and notifies",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test:e2e": "node scripts/e2e.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

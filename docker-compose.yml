@@ -1,0 +1,40 @@
+# n8n with the three workflows already imported and published, and a small
+# stand-in that plays the API the sync reads and receives the notifications.
+#   cp .env.example .env   (fill it in)   then   docker compose up -d
+# Already have n8n (Cloud or your own)? You do not need this file: see
+# "Add it to your n8n" in the README.
+
+services:
+  n8n:
+    image: ${N8N_IMAGE:-n8nio/n8n:2.47.7}
+    restart: unless-stopped
+    entrypoint: ["sh", "/bootstrap/bootstrap.sh"]
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY in .env}
+      # Used for the execution link in the error log. Set it to the address
+      # you open the editor on.
+      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL:-http://localhost:5678}
+      # Filled into the workflows on first start (see docker/prepare.mjs).
+      API_URL: ${API_URL:-http://standin:8080}
+      NOTIFY_URL: ${NOTIFY_URL:-http://standin:8080/notify}
+      THROTTLE_MINUTES: ${THROTTLE_MINUTES:-}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/bootstrap/workflows:ro
+      - ./docker/bootstrap.sh:/bootstrap/bootstrap.sh:ro
+      - ./docker/prepare.mjs:/bootstrap/prepare.mjs:ro
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+
+  # Stand-in API and notification receiver. See docker/standin.mjs.
+  standin:
+    image: node:22-alpine
+    restart: unless-stopped
+    command: ["node", "/app/standin.mjs"]
+    volumes:
+      - ./docker/standin.mjs:/app/standin.mjs:ro
+    ports:
+      - "${STANDIN_PORT:-8080}:8080"
+
+volumes:
+  n8n_data:

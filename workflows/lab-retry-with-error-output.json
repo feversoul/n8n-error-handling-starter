@@ -1,0 +1,99 @@
+{
+  "name": "Error starter · Lab: retry with error output",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Error starter · Lab\nOnly for the tests, you do not need it. One HTTP Request node with **Retry On Fail** (3 tries) and **On Error = Continue (using error output)** at the same time. The test gives it a list of addresses, some of which fail, and counts the requests.",
+        "width": 620,
+        "height": 140,
+        "color": 4
+      },
+      "id": "359da797-8a75-4e91-80ae-21c776b4a49d",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "error-starter/lab/retry-with-error-output",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "b32c1d64-fb30-446b-8c6a-19dca5cf2b72",
+      "name": "Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "6c100cb1-6480-422b-8e53-c9af7e572a15"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.body.urls.map((url) => ({ json: { url } }));"
+      },
+      "id": "7f3b79d8-b1a5-45f6-81fe-83d0d4ca5c35",
+      "name": "Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "id": "8048a3f3-be84-4d3e-8880-ac4b67ef93d3",
+      "name": "Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 200,
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Call": {
+      "main": [
+        [
+          {
+            "node": "Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Items": {
+      "main": [
+        [
+          {
+            "node": "Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "esLab00000000001"
+}

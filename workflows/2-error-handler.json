@@ -1,0 +1,287 @@
+{
+  "name": "Error starter · 2 Error handler",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Error starter · Error handler\nRuns when a workflow that names this one under **Workflow settings > Error workflow** fails in a production run (schedule, webhook, any trigger). It does not run for test runs started in the editor. Publish it.\n\nEvery failure becomes one row in `starter_error_log`. A notification is sent only for the first row with the same workflow, node and message in the current time window (60 minutes, see **Build log row**). The row is written first and the first row is read afterwards, so a burst of failures at the same moment still gives one notification.\n\n**Notify** posts `{ \"text\": \"...\" }` to `NOTIFY_URL`, the body a Slack incoming webhook takes. Swap it for a Slack or Gmail node and use `{{ $('Build log row').first().json.text }}` as the message.",
+        "width": 900,
+        "height": 270,
+        "color": 4
+      },
+      "id": "18559f0f-1e93-4abf-807d-44ceb55042db",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -360
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1da9f26a-0f8a-4634-8a50-6897ea1dc6a3",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const NOTIFY_URL = 'https://example.com/your-webhook';\nconst THROTTLE_MINUTES = 60;\n\n// A failed run arrives with `execution`; a trigger that could not start\n// arrives with `trigger` instead.\nconst event = $input.first().json;\nconst error = event.execution?.error ?? event.trigger?.error ?? {};\nconst workflow = event.workflow?.name ?? '';\nconst node = event.execution?.lastNodeExecuted ?? error.node?.name ?? '';\nconst message = error.message ?? 'Unknown error';\nconst execution_url = event.execution?.url ?? '';\n\n// Same workflow, node and message in the same window: same key.\nconst window = Math.floor(Date.now() / (THROTTLE_MINUTES * 60000));\nconst throttle_key = [event.workflow?.id ?? '', node, message, window].join('|');\n\nconst text = `n8n: \"${workflow}\" failed at \"${node}\": ${message}${execution_url ? ` ${execution_url}` : ''}`;\nreturn [{ json: { workflow, node, message, execution_url, failed_at: new Date().toISOString(), throttle_key, text, notify_url: NOTIFY_URL } }];"
+      },
+      "id": "526589ff-cd5b-4f81-846d-6f86df0c8e33",
+      "name": "Build log row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "starter_error_log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow": "={{ $json.workflow }}",
+            "node": "={{ $json.node }}",
+            "message": "={{ $json.message }}",
+            "execution_url": "={{ $json.execution_url }}",
+            "failed_at": "={{ $json.failed_at }}",
+            "throttle_key": "={{ $json.throttle_key }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "workflow",
+              "displayName": "workflow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "node",
+              "displayName": "node",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_url",
+              "displayName": "execution_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "failed_at",
+              "displayName": "failed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "throttle_key",
+              "displayName": "throttle_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "2bd51c09-f3fc-489c-8698-5c52ebba52cd",
+      "name": "Log error",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "starter_error_log"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "throttle_key",
+              "condition": "eq",
+              "keyValue": "={{ $('Build log row').first().json.throttle_key }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 1,
+        "orderBy": true,
+        "orderByColumn": "id",
+        "orderByDirection": "ASC"
+      },
+      "id": "6549ce0a-4134-4e0a-821d-d587ded11ac2",
+      "name": "First row for this error",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "19f360b0-5cf5-4531-828e-4811694fec36",
+              "leftValue": "={{ $json.id === $('Log error').first().json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "looseTypeValidation": true
+        }
+      },
+      "id": "afc402c6-79da-4418-8bbe-5d88a9384e34",
+      "name": "Is it mine?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Build log row').first().json.notify_url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $('Build log row').first().json.text }) }}",
+        "options": {}
+      },
+      "id": "efd1816a-2f5d-4db5-8ee0-d5e17f340c11",
+      "name": "Notify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        -20
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build log row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build log row": {
+      "main": [
+        [
+          {
+            "node": "Log error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log error": {
+      "main": [
+        [
+          {
+            "node": "First row for this error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First row for this error": {
+      "main": [
+        [
+          {
+            "node": "Is it mine?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is it mine?": {
+      "main": [
+        [
+          {
+            "node": "Notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "esErrors00000001"
+}

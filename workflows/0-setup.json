@@ -1,0 +1,182 @@
+{
+  "name": "Error starter · 0 Setup",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Error starter · Setup\nRun this once: press **Execute workflow**. It creates two data tables: `starter_records` (what the sync writes) and `starter_error_log` (what the error workflow writes).\n\nThe webhook does the same for scripted installs. You can delete it.",
+        "width": 620,
+        "height": 180,
+        "color": 4
+      },
+      "id": "299fa508-4f33-4ad5-8e2e-84b32f4c6def",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -240
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "70e72e10-2493-4fef-8902-f6ffb7b3e9bf",
+      "name": "Run once",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "error-starter/setup",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "a73b0798-6928-429a-8e64-784126dd1954",
+      "name": "Or call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        180
+      ],
+      "webhookId": "39fc9c64-7761-4066-8cbe-d15514d631c7"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "starter_records",
+        "columns": {
+          "column": [
+            {
+              "name": "record_id",
+              "type": "string"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "type": "string"
+            },
+            {
+              "name": "status",
+              "type": "string"
+            },
+            {
+              "name": "error",
+              "type": "string"
+            },
+            {
+              "name": "synced_at",
+              "type": "date"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "id": "c8298be7-f373-4767-8786-10be69a3894a",
+      "name": "Create records table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "starter_error_log",
+        "columns": {
+          "column": [
+            {
+              "name": "workflow",
+              "type": "string"
+            },
+            {
+              "name": "node",
+              "type": "string"
+            },
+            {
+              "name": "message",
+              "type": "string"
+            },
+            {
+              "name": "execution_url",
+              "type": "string"
+            },
+            {
+              "name": "failed_at",
+              "type": "date"
+            },
+            {
+              "name": "throttle_key",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "id": "d72bed6e-1742-4f48-8d25-8f9aa271696e",
+      "name": "Create error log table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Run once": {
+      "main": [
+        [
+          {
+            "node": "Create records table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Or call": {
+      "main": [
+        [
+          {
+            "node": "Create records table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create records table": {
+      "main": [
+        [
+          {
+            "node": "Create error log table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "esSetup000000001"
+}
