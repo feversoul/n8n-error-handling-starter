@@ -398,7 +398,8 @@ test('an error workflow that is not published is not called; published again, it
   assert.equal((await service.notifications()).length, 0);
   const logs = spawnSync('docker', [...COMPOSE, 'logs', '--tail', '200', 'n8n'], { cwd: root, encoding: 'utf8' });
   const line = `${logs.stdout}${logs.stderr}`.split('\n').find((entry) => entry.includes('is not active and cannot be executed'));
-  if (line) finding('n8n log line while the error workflow is unpublished', line.replace(/^\S+\s+\|\s+/, '').trim());
+  assert.ok(line, 'n8n logs that the unpublished error workflow was skipped');
+  finding('n8n log line while the error workflow is unpublished', line.replace(/^\S+\s+\|\s+/, '').trim());
 
   assert.equal((await api('POST', `/workflows/${ERRORS}/activate`)).status, 200);
   await sync();
