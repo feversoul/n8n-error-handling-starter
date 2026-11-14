@@ -5,6 +5,8 @@
 //   API_URL            the API the sync reads
 //   NOTIFY_URL         where the error workflow posts
 //   THROTTLE_MINUTES   length of the notification window (default 60)
+//   SCHEDULE_ONCE_A_YEAR  tests only: move "Every hour" to 1 January, so the
+//                      schedule cannot add a run while the tests count requests
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -19,6 +21,7 @@ for (const file of readdirSync(source).filter((name) => name.endsWith('.json')))
     if (node.name === 'Settings' && env.API_URL) {
       for (const assignment of node.parameters.assignments.assignments) if (assignment.name === 'api_url') assignment.value = env.API_URL;
     }
+    if (node.name === 'Every hour' && env.SCHEDULE_ONCE_A_YEAR) node.parameters.rule = { interval: [{ field: 'cronExpression', expression: '0 0 1 1 *' }] };
     if (node.name === 'Build log row') {
       let code = node.parameters.jsCode;
       if (env.NOTIFY_URL) code = code.replace(/const NOTIFY_URL = .*;/, `const NOTIFY_URL = ${JSON.stringify(env.NOTIFY_URL)};`);

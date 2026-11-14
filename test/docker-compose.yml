@@ -4,6 +4,10 @@ services:
   n8n:
     restart: "no"
     mem_limit: 1500m
+    environment:
+      # The tests count the requests of each run. A run that crossed the top of
+      # an hour got an extra run from the hourly schedule and failed.
+      SCHEDULE_ONCE_A_YEAR: "1"
   standin:
     restart: "no"
     mem_limit: 256m

@@ -142,6 +142,11 @@ before(async () => {
   assert.equal(key.status, 200, JSON.stringify(key.body).slice(0, 300));
   apiKey = key.body.data.rawApiKey;
 
+  // The hourly schedule would add a run of its own when the tests cross the
+  // top of an hour. The test stack moves it to once a year (docker/prepare.mjs).
+  const schedule = (await api('GET', `/workflows/${SYNC}`)).body.nodes.find((node) => node.name === 'Every hour');
+  assert.equal(schedule.parameters.rule.interval[0].field, 'cronExpression', 'the test stack has no hourly schedule');
+
   // bootstrap.sh creates the tables after n8n is up.
   await until(
     async () => {
